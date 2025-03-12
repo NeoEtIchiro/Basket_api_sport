@@ -1,7 +1,7 @@
 <?php
 require_once('connexionDB.php');
 
-class GestionJoueur {
+class GestionRencontre {
     private $conn;
 
     public function __construct() {
@@ -10,7 +10,7 @@ class GestionJoueur {
     }
 
     function getAllRencontres() {
-        $stmt = $pdo->prepare("
+        $stmt = $this->conn->prepare("
             SELECT * FROM rencontre
             ORDER BY date_rencontre DESC
         ");
@@ -20,7 +20,7 @@ class GestionJoueur {
     
     // Fonction pour récupérer tous les rencontres à venir
     function getRencontresAVenir() {
-        $stmt = $pdo->prepare("
+        $stmt = $this->conn->prepare("
             SELECT * FROM rencontre 
             WHERE date_rencontre >= NOW()
             ORDER BY date_rencontre ASC
@@ -31,7 +31,7 @@ class GestionJoueur {
     
     // Récupérer les rencontres passées
     function getRencontresPassees() {
-        $stmt = $pdo->prepare("
+        $stmt = $this->conn->prepare("
             SELECT * FROM rencontre 
             WHERE date_rencontre < NOW()
             ORDER BY date_rencontre DESC
@@ -41,22 +41,22 @@ class GestionJoueur {
     }
 
     // Récupérer une rencontre spécifique
-    function getRencontreById($id_rencontre) {
-        $stmt = $pdo->prepare("SELECT * FROM rencontre WHERE id_rencontre = ?");
-        $stmt->execute([$id_rencontre]);
+    function getRencontre($id) {
+        $stmt = $this->conn->prepare("SELECT * FROM rencontre WHERE id_rencontre = ?");
+        $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
     // Fonction pour ajouter un rencontre avec les champs supplémentaires
     function addRencontre($data) {
-        $stmt = $pdo->prepare("INSERT INTO rencontre (date_rencontre, lieu, adversaire, resultat) VALUES (?, ?, ?, ?)");
+        $stmt = $this->conn->prepare("INSERT INTO rencontre (date_rencontre, lieu, adversaire, resultat) VALUES (?, ?, ?, ?)");
         $stmt->execute([$data['date_rencontre'], $data['lieu'], $data['adversaire'], '0-0']);
         return $stmt->rowCount() > 0;
     }
     
     // Mettre à jour les informations d'une rencontre
     function updateRencontre($data) {
-        $stmt = $pdo->prepare("
+        $stmt = $this->conn->prepare("
             UPDATE rencontre 
             SET date_rencontre = ?, adversaire = ?, lieu = ?, resultat = ?
             WHERE id_rencontre = ?
@@ -66,14 +66,14 @@ class GestionJoueur {
             $data['adversaire'],
             $data['lieu'],
             $data['resultat'],
-            $data['id_rencontre']
+            $data['id']
         ]);
         return $stmt->rowCount() > 0;
     }
     
-    function deleteRencontre($id_rencontre) {
-        $stmt = $pdo->prepare("DELETE FROM rencontre WHERE id_rencontre = ?");
-        $stmt->execute([$id_rencontre]);
+    function deleteRencontre($id) {
+        $stmt = $this->conn->prepare("DELETE FROM rencontre WHERE id_rencontre = ?");
+        $stmt->execute([$id]);
         return $stmt->rowCount() > 0;
     }
 }

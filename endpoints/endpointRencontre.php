@@ -11,7 +11,7 @@ if(!checkToken()){
 $http_method = $_SERVER['REQUEST_METHOD'];
 switch ($http_method){
     case "GET" :
-        $gestionJoueur = new GestionJoueur();
+        $gestionRencontre = new GestionRencontre();
 
         //Récupération des données dans l’URL
         if(isset($_GET['id']))
@@ -19,68 +19,82 @@ switch ($http_method){
             // Si on donne un id c'est qu'on veut savoir si le joueur a participer à une rencontre
             $id=htmlspecialchars($_GET['id']);
 
-            if($gestionJoueur->hasParticipatedInRencontres($id))
-                deliver_response(200, "Le joueur a au moins un match, id : " . $id, true);
+            $rencontre = $gestionRencontre->getRencontre($id);
+            if($rencontre)
+                deliver_response(200, "Rencontre avec l'id : " . $id, $rencontre);
             else
-                deliver_response(418, "Cet id n'a aucun match : " . $id, false);
-
+                deliver_response(418, "Aucune renctre avec l'id : " . $id, null);
+            break;
+        }
+        else if(isset($_GET['avenir']))
+        {
+            deliver_response(200, "Rencontres à venir", $gestionRencontre->getRencontresAVenir());
+            break;
+        }
+        else if(isset($_GET['passees']))
+        {
+            deliver_response(200, "Rencontres passées", $gestionRencontre->getRencontresPassees());
             break;
         }
 
-        deliver_response(200, "Toutes les rencontres", $gestionJoueur->getAllRencontres());
+        deliver_response(200, "Toutes les rencontres", $gestionRencontre->getAllRencontres());
     break;
     case "POST" :
-        $gestionJoueur = new GestionJoueur();
+        $gestionRencontre = new GestionRencontre();
 
         // Récupération des données dans le corps
         $postedData = file_get_contents('php://input');
         $data = json_decode($postedData,true); 
         /*Reçoit du json et renvoi une adaptation exploitable en php. Le paramètre true impose un tableau en retour
         et non un objet.*/
-        if(!isset($data['nom']) || !isset($data['prenom']) || !isset($data['numero_licence']) || !isset($data['date_naissance']) || !isset($data['taille']) || !isset($data['poids']) || !isset($data['commentaire']) || !isset($data['statut'])){
-            deliver_response(400, "Erreur de données, veuiller entrer un joueur au format JSON", null);
+        if(!isset($data['date_rencontre']) || !isset($data['lieu']) || !isset($data['adversaire'])){
+            deliver_response(400, "Erreur de données, veuiller entrer une rencontre au format JSON", null);
             return;
         }
 
-        deliver_response(201, "Création d'un nouveau joueur", $gestionJoueur->addJoueur($data));
+        deliver_response(201, "Création d'une nouvelle rencontre", $gestionRencontre->addRencontre($data));
 
         //Traitement des données
     break;
     case "PUT" :
-        $gestionJoueur = new GestionJoueur();
+        $gestionRencontre = new GestionRencontre();
         
         // Récupération des données dans le corps
         $postedData = file_get_contents('php://input');
-        $data = json_decode($postedData,true); 
-        /*Reçoit du json et renvoi une adaptation exploitable en php. Le paramètre true impose un tableau en retour
-        et non un objet.*/
-        if(!isset($data['id']) || !isset($data['nom']) || !isset($data['prenom']) || !isset($data['numero_licence']) || !isset($data['date_naissance']) || !isset($data['taille']) || !isset($data['poids']) || !isset($data['commentaire']) || !isset($data['statut'])){
-            deliver_response(400, "Erreur de données, veuiller entrer un joueur au format JSON", null);
+        $data = json_decode($postedData, true); 
+        /* Le JSON doit contenir :
+           - id
+           - date_rencontre
+           - adversaire
+           - lieu
+           - resultat
+        */
+        if(!isset($data['id']) || !isset($data['date_rencontre']) ||
+           !isset($data['adversaire']) || !isset($data['lieu']) || !isset($data['resultat'])){
+            deliver_response(400, "Erreur de données, veuillez entrer une rencontre au format JSON", null);
             return;
         }
-
-        if(!$gestionJoueur->updateJoueur($data))
-            deliver_response(404, "Aucun joueur avec l'id : " . $data['id'], false);
+    
+        if(!$gestionRencontre->updateRencontre($data))
+            deliver_response(404, "Aucune rencontre avec l'id : " . $data['id'], false);
         else
-            deliver_response(200, "Modification du joueur avec l'id : " . $data['id'], true);
-
-        //Traitement des données
+            deliver_response(200, "Modification de la rencontre avec l'id : " . $data['id'], true);
     break;
     case "DELETE":
-        $gestionJoueur = new GestionJoueur();
+        $gestionRencontre = new GestionRencontre();
         
-        //Récupération des données dans l’URL
+        // Récupération des données dans l’URL
         if(!isset($_GET['id'])){
             deliver_response(400, "Erreur de données, veuillez entrer un 'id' dans l'URL", null);
             return;
         }
-
-        $id=htmlspecialchars($_GET['id']);
-
-        if(!$gestionJoueur->deleteJoueur($id))
-            deliver_response(404, "Aucun joueur avec l'id : " . $id, false);
+        
+        $id = htmlspecialchars($_GET['id']);
+        
+        if(!$gestionRencontre->deleteRencontre($id))
+            deliver_response(404, "Aucune rencontre avec l'id : " . $id, false);
         else
-            deliver_response(200, "Suppression du joueur avec l'id : " . $id, true);
+            deliver_response(200, "Suppression de la rencontre avec l'id : " . $id, true);
     break;
 }
 
